@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resident — Decentral Park NYC</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  :root{
+    --green:#1B4332;--green-mid:#2D6A4F;--green-light:#52B788;--green-pale:#95D5B2;
+    --green-bg:#D8F3DC;--warm:#FEFAE0;--light:#F5F5F0;--white:#fff;--dark:#111;
+    --red:#E07A5F;--font-serif:'DM Serif Display',serif;--font-sans:'DM Sans',sans-serif;
+  }
+  html,body{height:100%;font-family:var(--font-sans);background:var(--green);color:#fff;}
+
+  /* --- Layout shell --- */
+  #app{display:flex;flex-direction:column;min-height:100vh;}
+  #screen{flex:1;overflow-y:auto;padding:24px 20px 100px;}
+  nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(17,17,17,0.95);
+      backdrop-filter:blur(8px);border-top:1px solid rgba(255,255,255,0.08);z-index:100;}
+  nav button{flex:1;padding:14px 4px 18px;border:none;background:none;color:rgba(255,255,255,0.45);
+      font-family:var(--font-sans);font-size:11px;font-weight:700;letter-spacing:1px;
+      text-transform:uppercase;cursor:pointer;transition:color .2s,background .2s;position:relative;}
+  nav button::before{content:'';position:absolute;top:0;left:20%;right:20%;height:3px;
+      border-radius:0 0 3px 3px;background:var(--green-light);opacity:0;transition:opacity .2s;}
+  nav button.active{color:#fff;}
+  nav button.active::before{opacity:1;}
+  nav button:hover{color:rgba(255,255,255,0.8);}
+
+  /* --- Hero --- */
+  .hero{display:flex;flex-direction:column;align-items:center;justify-content:center;
+      text-align:center;min-height:calc(100vh - 160px);padding:40px 20px;}
+  .hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 18px;
+      border-radius:100px;background:rgba(255,255,255,0.1);font-size:13px;font-weight:700;
+      letter-spacing:2px;text-transform:uppercase;margin-bottom:32px;color:var(--green-pale);}
+  .hero-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--green-light);
+      animation:pulse 2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.8);}}
+  .hero h1{font-family:var(--font-serif);font-size:clamp(40px,8vw,64px);line-height:1.1;
+      margin-bottom:20px;max-width:600px;}
+  .hero h1 span{color:var(--green-pale);}
+  .hero .pitch{font-size:clamp(18px,3.5vw,24px);line-height:1.6;max-width:520px;
+      opacity:.8;margin-bottom:40px;}
+  .hero .cta-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:100px;
+      border:none;font-family:var(--font-sans);font-size:16px;font-weight:700;cursor:pointer;
+      transition:transform .15s,box-shadow .15s;}
+  .btn:active{transform:scale(.96);}
+  .btn-primary{background:var(--green-light);color:var(--green);box-shadow:0 4px 24px rgba(82,183,136,.3);}
+  .btn-ghost{background:none;border:2px solid rgba(255,255,255,.25);color:#fff;}
+
+  /* --- Verify interaction --- */
+  .verify-card{margin-top:48px;background:rgba(255,255,255,0.06);border-radius:16px;
+      padding:28px 24px;max-width:400px;width:100%;text-align:left;}
+  .verify-card .card-label{font-size:12px;font-weight:700;text-transform:uppercase;
+      letter-spacing:2px;color:var(--green-pale);margin-bottom:12px;}
+  .verify-card .member-row{display:flex;align-items:center;gap:14px;}
+  .avatar{width:48px;height:48px;border-radius:50%;background:var(--green-mid);
+      display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);
+      font-size:20px;color:var(--green-pale);flex-shrink:0;}
+  .member-info .name{font-weight:700;font-size:17px;}
+  .member-info .role{font-size:14px;opacity:.6;margin-top:2px;}
+  .verify-card .verify-btn{margin-top:16px;width:100%;padding:12px;border-radius:10px;
+      border:2px solid var(--green-pale);background:none;color:var(--green-pale);
+      font-family:var(--font-sans);font-size:14px;font-weight:700;cursor:pointer;
+      transition:background .2s,color .2s;}
+  .verify-card .verify-btn:hover{background:var(--green-pale);color:var(--green);}
+  .verify-card .verify-btn.verified{background:var(--green-light);color:var(--green);
+      border-color:var(--green-light);pointer-events:none;}
+
+  /* --- Flow map --- */
+  .flow-page{padding:40px 20px;max-width:600px;margin:0 auto;}
+  .flow-page h2{font-family:var(--font-serif);font-size:32px;margin-bottom:8px;text-align:center;}
+  .flow-page .sub{text-align:center;opacity:.6;margin-bottom:36px;font-size:15px;}
+  .flow-grid{display:flex;flex-direction:column;gap:12px;}
+  .flow-box{display:block;padding:20px 24px;border-radius:12px;background:rgba(255,255,255,0.08);
+      text-decoration:none;color:#fff;transition:background .2s,transform .15s;cursor:pointer;}
+  .flow-box:hover{background:rgba(255,255,255,0.14);transform:translateX(4px);}
+  .flow-box .flow-title{font-family:var(--font-serif);font-size:20px;margin-bottom:4px;}
+  .flow-box .flow-desc{font-size:14px;opacity:.6;}
+  .flow-box .flow-arrow{float:right;font-size:20px;opacity:.4;margin-top:4px;}
+
+  /* --- Placeholder screens --- */
+  .placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;
+      text-align:center;min-height:calc(100vh - 160px);padding:40px 20px;}
+  .placeholder .icon{font-size:48px;margin-bottom:20px;opacity:.3;}
+  .placeholder h2{font-family:var(--font-serif);font-size:32px;margin-bottom:12px;}
+  .placeholder p{font-size:18px;opacity:.6;max-width:420px;line-height:1.6;}
+  .placeholder .tag{display:inline-block;margin-top:20px;padding:6px 16px;border-radius:100px;
+      border:1px solid rgba(255,255,255,.2);font-size:12px;font-weight:700;
+      text-transform:uppercase;letter-spacing:2px;opacity:.5;}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="screen"></div>
+  <nav>
+    <button data-screen="/">Home</button>
+    <button data-screen="/flow">Map</button>
+    <button data-screen="/s/2">ID</button>
+    <button data-screen="/s/3">Trust</button>
+    <button data-screen="/s/4">Events</button>
+  </nav>
+</div>
+
+<!-- TEMPLATES -->
+<template id="t-hero">
+  <div class="hero">
+    <div class="hero-badge"><span class="dot"></span> Decentral Park NYC</div>
+    <h1>Your park.<br>Your <span>proof</span>.</h1>
+    <p class="pitch">One verifiable credential that says you belong here — no database, no surveillance, just community trust on your own device.</p>
+    <div class="cta-row">
+      <button class="btn btn-primary" id="claimBtn">Claim Residency</button>
+      <button class="btn btn-ghost" onclick="location.hash='/flow'">How it works</button>
+    </div>
+    <div class="verify-card">
+      <div class="card-label">Resident preview</div>
+      <div class="member-row">
+        <div class="avatar">DP</div>
+        <div class="member-info">
+          <div class="name">Park Neighbor</div>
+          <div class="role">Resident since Sep 2026</div>
+        </div>
+      </div>
+      <button class="verify-btn" id="verifyBtn">Verify credential</button>
+    </div>
+  </div>
+</template>
+
+<template id="t-flow">
+  <div class="flow-page">
+    <h2>Flow Map</h2>
+    <p class="sub">How Resident works, screen by screen</p>
+    <div class="flow-grid">
+      <a class="flow-box" href="#/">
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-title">Home</div>
+        <div class="flow-desc">Hero screen with claim action and live credential preview</div>
+      </a>
+      <a class="flow-box" href="#/s/2">
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-title">Resident ID</div>
+        <div class="flow-desc">Your on-device credential card with QR for peer verification</div>
+      </a>
+      <a class="flow-box" href="#/s/3">
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-title">Trust Circle</div>
+        <div class="flow-desc">Mutual attestation — neighbors vouch for neighbors</div>
+      </a>
+      <a class="flow-box" href="#/s/4">
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-title">Park Events</div>
+        <div class="flow-desc">RSVP and check in to community events with your credential</div>
+      </a>
+      <a class="flow-box" href="#/flow">
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-title">Flow Map</div>
+        <div class="flow-desc">This screen — the navigation overview</div>
+      </a>
+    </div>
+  </div>
+</template>
+
+<template id="t-s2">
+  <div class="placeholder">
+    <div class="icon">&#9881;</div>
+    <h2>Resident ID</h2>
+    <p>A verifiable credential stored on your phone — show a QR, prove you belong, reveal nothing else.</p>
+    <span class="tag">Coming next</span>
+  </div>
+</template>
+
+<template id="t-s3">
+  <div class="placeholder">
+    <div class="icon">&#10070;</div>
+    <h2>Trust Circle</h2>
+    <p>Neighbors attest for each other — no central authority, just mutual recognition building a web of trust.</p>
+    <span class="tag">Coming next</span>
+  </div>
+</template>
+
+<template id="t-s4">
+  <div class="placeholder">
+    <div class="icon">&#9733;</div>
+    <h2>Park Events</h2>
+    <p>Tap to RSVP, flash your credential at the door — community gatherings without sign-up sheets.</p>
+    <span class="tag">Coming next</span>
+  </div>
+</template>
+
+<script>
+(function(){
+  var screen = document.getElementById('screen');
+  var navBtns = document.querySelectorAll('nav button');
+  var routes = {
+    '/':    't-hero',
+    '/flow':'t-flow',
+    '/s/2': 't-s2',
+    '/s/3': 't-s3',
+    '/s/4': 't-s4'
+  };
+
+  function render(){
+    var hash = location.hash.replace('#','') || '/';
+    var tplId = routes[hash] || routes['/'];
+    var tpl = document.getElementById(tplId);
+    screen.innerHTML = '';
+    screen.appendChild(tpl.content.cloneNode(true));
+    screen.scrollTop = 0;
+
+    for(var i=0;i<navBtns.length;i++){
+      var s = navBtns[i].getAttribute('data-screen');
+      navBtns[i].classList.toggle('active', s===hash);
+    }
+
+    // Wire hero interactions
+    if(hash==='/'){
+      var claimBtn = document.getElementById('claimBtn');
+      var verifyBtn = document.getElementById('verifyBtn');
+      if(claimBtn) claimBtn.addEventListener('click',function(){
+        this.textContent = 'Credential claimed';
+        this.style.background = 'var(--green-pale)';
+        this.style.color = 'var(--green)';
+        this.style.pointerEvents = 'none';
+      });
+      if(verifyBtn) verifyBtn.addEventListener('click',function(){
+        this.classList.add('verified');
+        this.textContent = 'Verified';
+      });
+    }
+  }
+
+  for(var i=0;i<navBtns.length;i++){
+    navBtns[i].addEventListener('click',function(){
+      location.hash = this.getAttribute('data-screen');
+    });
+  }
+
+  window.addEventListener('hashchange', render);
+  render();
+})();
+</script>
+</body>
+</html>
